@@ -14,7 +14,9 @@ function printSinglePhraseStats(){
         let count = stats[each].count;
         let hitsWrong = stats[each].hitsWrong;
         let name = each;
-        arrayToPrint.push({name, count, hitsCorrect, hitsWrong});
+        let averageWrongPerTry = hitsWrong / count;
+        let wpm = stats[each].wpm ?? 0;
+        arrayToPrint.push({name, count, hitsCorrect, hitsWrong, averageWrongPerTry, wpm});
     }
     console.table(arrayToPrint)
 }
@@ -411,11 +413,12 @@ var ngramTypeConfig = {
                     this.data.single_phrase_history.push(single_phrase_key);
                 }
 
-                let stat = {count: 0 , hitsWrong: 0, hitsCorrect:0  }
+                let stat = {count: 0 , hitsWrong: 0, hitsCorrect:0, wpm: 0 }
                 stat.hitsCorrect = (this.data.single_phrase_stats[single_phrase_key]?.hitsCorrect ?? 0) + this.hitsCorrect;
                 stat.hitsWrong  = (this.data.single_phrase_stats[single_phrase_key]?.hitsWrong ?? 0) + this.hitsWrong;
                 stat.count  = (this.data.single_phrase_stats[single_phrase_key]?.count ?? 0) + 1;
-
+                let temp_wpm = ( (this.data.single_phrase_stats[single_phrase_key]?.wpm ?? 0) + this.rawWPM );
+                stat.wpm = temp_wpm / (temp_wpm == this.rawWPM ? 1 : 2 ) // choosing two here instead of stat.count so that newer runs have greater effect on average.
                 this.data.single_phrase_stats[single_phrase_key] = stat;
             }
 
