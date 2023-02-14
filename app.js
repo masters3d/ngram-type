@@ -4,7 +4,7 @@ var ngramTypeConfig = {
         return {
             // If there are major schema changes, increment this number.
             // and update the `data-reset-modal` message.
-            VERSION: 2.0,
+            VERSION: 2.3,
 
             // Data source mappings.
             bigrams: bigrams,
@@ -12,8 +12,9 @@ var ngramTypeConfig = {
             tetragrams: tetragrams,
             words: words,
             custom_words: null,
-
             data: {
+                single_phrase_fails: {},
+                single_phrase_passes: {},
                 source: 'bigrams',
                 soundCorrectLetterEnabled: true,
                 soundIncorrectLetterEnabled: true,
@@ -162,6 +163,12 @@ var ngramTypeConfig = {
 
             this.resetCurrentPhraseMetrics();
         },
+        'data.single_phrase_fails': function() {
+            this.save();
+        },
+        'data.single_phrase_passes': function() {
+            this.save();
+        },
         'data.soundCorrectLetterEnabled': function() {
             this.save();
         },
@@ -199,7 +206,10 @@ var ngramTypeConfig = {
     },
     methods: {
         save: function() {
-            localStorage.ngramTypeAppdata = JSON.stringify(this.data);
+            localStorage.ngramTypeAppdata = JSON.stringify(this.data); 
+            console.log(`saving file:`);
+            console.log(this.data);
+
         },
         load: function () {
             this.data = JSON.parse(localStorage.ngramTypeAppdata);
@@ -375,6 +385,17 @@ var ngramTypeConfig = {
             }
         },
         resetCurrentPhraseMetrics: function() {
+
+            if (this.dataSource.combination == 1) {
+                let single_phrase_cleaned = this.expectedPhrase.split(" ")[0];
+                if (this.hitsCorrect > 0) {
+                    this.data.single_phrase_passes[single_phrase_cleaned] = (this.data.single_phrase_passes[single_phrase_cleaned] ?? 0) + this.hitsCorrect;
+                }
+                if (this.hitsWrong > 0){
+                    this.data.single_phrase_fails[single_phrase_cleaned] = (this.data.single_phrase_fails[single_phrase_cleaned] ?? 0) + this.hitsWrong;
+                }
+            }
+
             this.hitsCorrect = 0;
             this.hitsWrong = 0;
             this.typedPhrase = '';
