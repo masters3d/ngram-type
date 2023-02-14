@@ -1,10 +1,31 @@
+
+function printSinglePhraseStats(){
+
+    let data = JSON.parse(localStorage.ngramTypeAppdata);
+    let history = data.single_phrase_history;
+    let stats =  data.single_phrase_stats;
+    console.log("Stats for Single Phrase:")
+
+    let arrayToPrint = [];
+
+    for(var i = 0; i < history.length;  i+=1) {
+        let each =  history[i];
+        let hitsCorrect = stats[each].hitsCorrect;
+        let count = stats[each].count;
+        let hitsWrong = stats[each].hitsWrong;
+        let name = each;
+        arrayToPrint.push({name, count, hitsCorrect, hitsWrong});
+    }
+    console.table(arrayToPrint)
+}
+
 var ngramTypeConfig = {
     el: '#app',
     data: function() {
         return {
             // If there are major schema changes, increment this number.
             // and update the `data-reset-modal` message.
-            VERSION: 2.3,
+            VERSION: 2.0,
 
             // Data source mappings.
             bigrams: bigrams,
@@ -13,8 +34,8 @@ var ngramTypeConfig = {
             words: words,
             custom_words: null,
             data: {
-                single_phrase_fails: {},
-                single_phrase_passes: {},
+                single_phrase_stats: {},
+                single_phrase_history:[],
                 source: 'bigrams',
                 soundCorrectLetterEnabled: true,
                 soundIncorrectLetterEnabled: true,
@@ -163,10 +184,10 @@ var ngramTypeConfig = {
 
             this.resetCurrentPhraseMetrics();
         },
-        'data.single_phrase_fails': function() {
+        'data.single_phrase_stats': function() {
             this.save();
         },
-        'data.single_phrase_passes': function() {
+        'data.single_phrase_history': function() {
             this.save();
         },
         'data.soundCorrectLetterEnabled': function() {
@@ -207,9 +228,6 @@ var ngramTypeConfig = {
     methods: {
         save: function() {
             localStorage.ngramTypeAppdata = JSON.stringify(this.data); 
-            console.log(`saving file:`);
-            console.log(this.data);
-
         },
         load: function () {
             this.data = JSON.parse(localStorage.ngramTypeAppdata);
@@ -387,13 +405,18 @@ var ngramTypeConfig = {
         resetCurrentPhraseMetrics: function() {
 
             if (this.dataSource.combination == 1) {
-                let single_phrase_cleaned = this.expectedPhrase.split(" ")[0];
-                if (this.hitsCorrect > 0) {
-                    this.data.single_phrase_passes[single_phrase_cleaned] = (this.data.single_phrase_passes[single_phrase_cleaned] ?? 0) + this.hitsCorrect;
+                let single_phrase_key = this.expectedPhrase.split(" ")[0];
+
+                if (this.data.single_phrase_stats[single_phrase_key] == undefined){
+                    this.data.single_phrase_history.push(single_phrase_key);
                 }
-                if (this.hitsWrong > 0){
-                    this.data.single_phrase_fails[single_phrase_cleaned] = (this.data.single_phrase_fails[single_phrase_cleaned] ?? 0) + this.hitsWrong;
-                }
+
+                let stat = {count: 0 , hitsWrong: 0, hitsCorrect:0  }
+                stat.hitsCorrect = (this.data.single_phrase_stats[single_phrase_key]?.hitsCorrect ?? 0) + this.hitsCorrect;
+                stat.hitsWrong  = (this.data.single_phrase_stats[single_phrase_key]?.hitsWrong ?? 0) + this.hitsWrong;
+                stat.count  = (this.data.single_phrase_stats[single_phrase_key]?.count ?? 0) + 1;
+
+                this.data.single_phrase_stats[single_phrase_key] = stat;
             }
 
             this.hitsCorrect = 0;
